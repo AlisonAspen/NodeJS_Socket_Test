@@ -1,27 +1,40 @@
 const express = require('express');
 const socket = require('socket.io');
 
-let app = express();
+//Setup the server ---------------------------------------------
+const app = express();
+const http = require('http');
+const hostname = '127.0.0.1'; //localhost
+const port = 5000;
+const server = http.createServer(app);
 
-let server = app.listen(5000); //create server to port 5000
+app.use( express.static('public') );
+server.listen(port, hostname, () => {
+  console.log(`Server running at http://${hostname}:${port}/`);
+});
 
-app.use(express.static('public'));
+app.get("/", (request, response) => {
+  response.sendFile(directory_name + "index.html");
+});
+//--------------------------------------------------------------
 
-console.log("Node is running on port 5000...");
-
+//Allow server to use the socket
 const io = socket(server);
+//Dealing with server events / connection
+//...when a new connection is on, run the newConnection function
+io.sockets.on('connection', newConnection); //callback
 
-io.sockets.on('connection', newCOnnection);
+//Function that serves the new connection
+function newConnection(socket){
+	console.log('New connection: ' + socket.id);
 
-function newConnection(socket) {
-    console.log("New connection: " + socket.id);
+	//When a message arrives from the client, run the eventMessage function
+	socket.on('eventFromClient', eventMessage);
 
-    socket.on('eventFromClient', eventMessage);
-
-    function eventMessage(data) {
-        socket.broadcast.emit('eventFromServer', data);
-        //send data to all clients
-        //io.sockets.emit('mouse', data);
-        console.log(data);
-    }
+	function eventMessage(data){
+		socket.broadcast.emit('eventFromServer', data);
+		//Following line refers to sending data to all clients
+		//io.sockets.emit('mouse', data);
+		console.log(data);
+	}
 }
